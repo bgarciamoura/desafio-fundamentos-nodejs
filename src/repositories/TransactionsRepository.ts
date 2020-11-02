@@ -1,29 +1,67 @@
 import Transaction from '../models/Transaction';
 
 interface Balance {
-  income: number;
-  outcome: number;
-  total: number;
+	income: number;
+	outcome: number;
+	total: number;
+}
+
+interface CreateTransactionDTO {
+	title: string;
+	value: number;
+	type: 'income' | 'outcome';
 }
 
 class TransactionsRepository {
-  private transactions: Transaction[];
+	private transactions: Transaction[];
 
-  constructor() {
-    this.transactions = [];
-  }
+	constructor() {
+		this.transactions = [];
+	}
 
-  public all(): Transaction[] {
-    // TODO
-  }
+	public all(): Transaction[] {
+		return this.transactions;
+	}
 
-  public getBalance(): Balance {
-    // TODO
-  }
+	public getBalance(): Balance {
+		const income = this.transactions.reduce((acc, transaction) => {
+			return transaction.type === 'income'
+				? acc + transaction.value
+				: acc + 0;
+		}, 0);
 
-  public create(): Transaction {
-    // TODO
-  }
+		const outcome = this.transactions.reduce((acc, transaction) => {
+			return transaction.type === 'outcome'
+				? acc + transaction.value
+				: acc + 0;
+		}, 0);
+
+		const balance = {
+			income,
+			outcome,
+			total: income - outcome,
+		};
+
+		return balance;
+	}
+
+	public create({ title, value, type }: CreateTransactionDTO): Transaction {
+		const { total } = this.getBalance();
+
+		if (type === 'outcome' && value > total) {
+			throw new Error('Outcome must be lesser than total.');
+		}
+
+		const transaction = new Transaction({
+			title,
+			value,
+			type,
+		});
+
+		this.transactions.push(transaction);
+
+		return transaction;
+	}
 }
 
 export default TransactionsRepository;
